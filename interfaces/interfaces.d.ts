@@ -16,11 +16,23 @@ interface Movie {
 }
 
 interface TrendingMovie {
+  _id: string;
   searchTerm: string;
-  movie_id: number;
+  movie_id: string;
   title: string;
   count: number;
-  poster_url: string;
+  poster_url?: string;
+  createdAt: string;
+  $id?: string; // Legacy compatibility
+}
+
+interface UserDocument {
+  _id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  createdAt: string;
+  password: string;
 }
 
 interface MovieDetails {
@@ -74,4 +86,79 @@ interface MovieDetails {
 interface TrendingCardProps {
   movie: TrendingMovie;
   index: number;
+}
+
+interface FavoriteDocument {
+  _id: string;
+  userId: string;
+  movieId: string;
+  title: string;
+  poster_url?: string;
+  createdAt: Date;
+}
+
+interface ReviewDocument {
+  _id: string;
+  userId: string;
+  movieId: string;
+  rating: number;
+  text: string;
+  createdAt: Date;
+  userName?: string;
+}
+
+interface SearchDocument {
+  _id: string;
+  searchTerm: string;
+  movie_id: string;
+  count: number;
+  title: string;
+  poster_url?: string;
+  createdAt: Date;
+}
+
+// Session and Auth interfaces
+interface SessionUser {
+  _id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+}
+
+// Realm-specific interfaces for query results
+interface RealmResults<T> {
+  length: number;
+  [index: number]: T;
+  filtered(query: string, ...args: any[]): RealmResults<T>;
+  sorted(field: string, reverse?: boolean): RealmResults<T>;
+}
+
+// Additional utility interfaces
+interface AuthContextType {
+  user: SessionUser | null;
+  profile: UserDocument | null;
+  loading: boolean;
+  error: string | null;
+  signin: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
+  signout: () => Promise<void>;
+  refresh: () => Promise<void>;
+  updateProfile: (updates: Partial<UserDocument>) => Promise<void>;
+}
+
+// Movie Card Props
+interface MovieCardProps {
+  id: number;
+  poster_path: string;
+  title: string;
+  vote_average: number;
+  release_date: string;
+}
+
+// Search Bar Props
+interface SearchBarProps {
+  placeholder: string;
+  onPress?: () => void;
+  value?: string;
+  onChangeText?: (text: string) => void;
 }

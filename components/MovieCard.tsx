@@ -1,7 +1,10 @@
 import { icons } from "@/constants/icons";
+import { databaseService } from "@/services/database";
+import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../contexts/AuthContext";
 
 const MovieCard = ({
   id,
@@ -10,9 +13,71 @@ const MovieCard = ({
   vote_average,
   release_date,
 }: Movie) => {
+  const { user } = useAuth();
+  const [isFav, setIsFav] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadFavoriteStatus = async () => {
+      if (!user) {
+        setIsFav(false);
+        return;
+      }
+
+      try {
+        const favoriteExists = await databaseService.isFavorite(
+          user._id,
+          id.toString()
+        );
+        if (mounted) {
+          setIsFav(favoriteExists);
+        }
+      } catch (error) {
+        console.error("Error checking favorite status:", error);
+        if (mounted) {
+          setIsFav(false);
+        }
+      }
+    };
+
+    loadFavoriteStatus();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, id]);
+
+  const onToggle = async () => {
+    if (!user) {
+      // You can navigate to login here if needed
+      // router.push("/(auth)/login");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await databaseService.toggleFavorite(user._id, {
+        id,
+        title,
+        poster_path,
+      });
+
+      if (res.removed) {
+        setIsFav(false);
+      } else {
+        setIsFav(true);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Link href={`/movies/${id}`} asChild>
-      <TouchableOpacity className="w-[30%] mb-4">
+      <TouchableOpacity className="w-[30%] mb-4 relative">
         <Image
           source={{
             uri: poster_path
@@ -22,22 +87,43 @@ const MovieCard = ({
           className="w-full h-52 rounded-lg"
           resizeMode="cover"
         />
+
+        {/* Favorite Button */}
+        <TouchableOpacity
+          onPress={onToggle}
+          disabled={saving}
+          className="absolute top-2 right-2 p-1 bg-black/40 rounded-full"
+          style={{ zIndex: 10 }}
+        >
+          {saving ? (
+            <Ionicons name="heart" size={20} color="#ccc" />
+          ) : (
+            <Ionicons
+              name={isFav ? "heart" : "heart-outline"}
+              size={20}
+              color={isFav ? "#ff6b6b" : "#fff"}
+            />
+          )}
+        </TouchableOpacity>
+
+        {/* Movie Title */}
         <Text className="text-white text-sm font-bold mt-2" numberOfLines={1}>
           {title}
         </Text>
-        <View className="flex-row items-center justify-start gap-x-1">
-          <Image source={icons.star} className="size=4" />
-          <Text className="text-xs text-white font-bold uppercase">
-            {Math.round(vote_average / 2)}
+
+        {/* Rating */}
+        <View className="flex-row items-center justify-start gap-x-1 mt-1">
+          <Image source={icons.star} className="w-3 h-3" />
+          <Text className="text-xs text-white font-bold">
+            {vote_average ? (vote_average / 2).toFixed(1) : "N/A"}
           </Text>
         </View>
-        <View className="flex-row items-center justify-between">
-          <Text className="text-xs text-light-300 font-medium mt-1">
-            {release_date?.split("-")[0]}
+
+        {/* Release Year */}
+        <View className="flex-row items-center justify-between mt-1">
+          <Text className="text-xs text-light-300 font-medium">
+            {release_date?.split("-")[0] || "Unknown"}
           </Text>
-          {/* <Text className="text-xs font-medium text-light-300 uppercase">
-            Movie
-          </Text> */}
         </View>
       </TouchableOpacity>
     </Link>

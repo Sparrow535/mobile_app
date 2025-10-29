@@ -1,0 +1,110 @@
+name: CI — DevSecOps
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+    security-events: write
+
+jobs:
+    setup-and-build:
+        name: Lint • Typecheck • Test
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint
+              run: npm run lint
+
+            - name: Type-check
+              run: npm run typecheck
+
+            - name: Unit tests
+              run: npm test -- --ci --reporters=default --reporters=jest-junit
+              env:
+                  JEST_JUNIT_OUTPUT_DIR: ./reports/junit
+
+            - name: Upload test reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: junit
+                  path: reports/junit
+
+    dep-scan:
+        name: Dependency Scan (audit-ci)
+        runs-on: ubuntu-latest
+        needs: setup-and-build
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+            - run: npm ci
+            - name: Run audit-ci
+              run: npx audit-ci --moderate --report --json --output ./reports/audit-ci.json
+            - name: Upload audit-ci report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: audit-ci
+                  path: reports/audit-ci.json
+
+    sbom-and-trivy:
+        name: SBOM + Repo Scan (CycloneDX + Trivy)
+        runs-on: ubuntu-latest
+        needs: setup-and-build
+        steps:
+            - uses: actions/checkout@v4
+            - name: Generate SBOM
+              run: |
+                  mkdir -p reports
+                  npx @cyclonedx/cyclonedx-npm --output-file ./reports/sbom.json --output-format json
+            - name: Upload SBOM
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sbom
+                  path: reports/sbom.json
+            - name: Trivy FS Scan
+              uses: aquasecurity/trivy-action@0.24.0
+              with:
+                  scan-type: fs
+                  format: sarif
+                  output: trivy.sarif
+                  severity: CRITICAL,HIGH
+                  ignore-unfixed: true
+            - name: Upload Trivy SARIF
+              uses: github/codeql-action/upload-sarif@v3
+              with:
+                  sarif_file: trivy.sarif
+
+    gitleaks:
+        name: Secrets Scan (Gitleaks)
+        runs-on: ubuntu-latest
+        needs: setup-and-build
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Gitleaks
+              uses: gitleaks/gitleaks-action@v2
+              with:
+                  args: detect --redact --report-format sarif --report-path gitleaks.sarif
+            - name: Upload Gitleaks SARIF
+              uses: github/codeql-action/upload-sarif@v3
+              with:
+                  sarif_file: gitleaks.sarif

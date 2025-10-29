@@ -1,8 +1,10 @@
+// app/(tabs)/_layout.tsx
 import { icons } from "@/constants/icons";
-import { images } from "@/constants/images"; // Adjust the path as necessary
-import { Tabs } from "expo-router";
+import { images } from "@/constants/images";
+import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { Image, ImageBackground, Text, View } from "react-native";
+import { useAuth } from "../../contexts/AuthContext";
 
 const TabIcon = ({ focused, icon, title }: any) => {
   if (focused) {
@@ -33,7 +35,12 @@ const TabIcon = ({ focused, icon, title }: any) => {
   );
 };
 
-const _layout = () => {
+export default function TabLayout() {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
+
   return (
     <Tabs
       screenOptions={{
@@ -55,6 +62,7 @@ const _layout = () => {
           borderWidth: 1,
           borderColor: "#0f0D23",
         },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -99,6 +107,4 @@ const _layout = () => {
       />
     </Tabs>
   );
-};
-
-export default _layout;
+}

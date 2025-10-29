@@ -4,37 +4,67 @@ import { Link } from "expo-router";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-const TrendingCard = ({
-  movie: { movie_id, title, poster_url },
-  index,
-}: TrendingCardProps) => {
+const TrendingCard = ({ movie, index }: TrendingCardProps) => {
+  // Handle both MongoDB and Appwrite formats
+  const movieId = movie.movie_id || movie._id?.toString() || "";
+  const title = movie.title || "Unknown Title";
+  const posterUrl =
+    movie.poster_url || "https://placehold.co/600x400/1a1a1a/ffffff.png";
+  const searchCount = Number(movie.count || 0);
+
   return (
-    <Link href={`/movies/${movie_id}`} asChild>
-      <TouchableOpacity className="w-32 relative pl-5">
+    <Link href={`/movies/${movieId}`} asChild>
+      <TouchableOpacity className="w-36 relative">
+        {/* Movie Poster */}
         <Image
-          source={{ uri: poster_url }}
-          className="w-32 h-48 rounded-lg"
+          source={{ uri: posterUrl }}
+          className="w-36 h-52 rounded-xl"
           resizeMode="cover"
         />
-        <View className="absolute bottom-9 px-2 py-1 rounded-full">
+
+        {/* Ranking Badge */}
+        <View className="absolute -top-2 -left-2">
           <MaskedView
             maskElement={
-              <Text className="font-bold text-white text-6xl">{index + 1}</Text>
+              <Text className="font-bold text-white text-3xl">
+                #{index + 1}
+              </Text>
             }
           >
             <Image
               source={images.rankingGradient}
-              className="size-14 "
+              className="w-12 h-12"
               resizeMode="cover"
             />
           </MaskedView>
         </View>
-        <Text
-          className="text-sm font-bold  mt-2 text-light-200"
-          numberOfLines={2}
-        >
-          {title}
-        </Text>
+
+        {/* Search Count Badge */}
+        {searchCount > 0 && (
+          <View className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded-full">
+            <Text className="text-white text-xs font-semibold">
+              {searchCount} {searchCount === 1 ? "search" : "searches"}
+            </Text>
+          </View>
+        )}
+
+        {/* Movie Title */}
+        <View className="mt-3">
+          <Text
+            className="text-white text-sm font-bold leading-5"
+            numberOfLines={2}
+          >
+            {title}
+          </Text>
+
+          {/* Additional Info */}
+          <View className="flex-row items-center justify-between mt-1">
+            <Text className="text-light-300 text-xs">Trending</Text>
+            <Text className="text-accent text-xs font-semibold">
+              #{index + 1}
+            </Text>
+          </View>
+        </View>
       </TouchableOpacity>
     </Link>
   );
