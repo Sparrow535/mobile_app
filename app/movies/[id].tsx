@@ -5,7 +5,7 @@ import { storageService } from "@/services/storage";
 import useFetch from "@/services/useFetch";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -35,9 +35,11 @@ const MovieInfo = ({ label, value }: MovieInfoProps) => (
 const MovieDetails = () => {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { data: movie, loading } = useFetch(() =>
-    fetchMovieDetails(id as string)
+  const fetchMovie = useCallback(
+    () => fetchMovieDetails(id as string),
+    [id]
   );
+  const { data: movie, loading } = useFetch(fetchMovie);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(5);

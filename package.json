@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "sbom": "cyclonedx-npm --output-file ./reports/sbom.json --output-format json",

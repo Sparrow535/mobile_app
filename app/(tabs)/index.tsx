@@ -7,7 +7,7 @@ import { fetchMovies } from "@/services/api";
 import { databaseService } from "@/services/database";
 import useFetch from "@/services/useFetch";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -26,36 +26,53 @@ export default function Index() {
   const transformTrendingData = (data: any[]): TrendingMovie[] => {
     if (!Array.isArray(data)) return [];
 
-    return data.map((item) => {
-      const movie_id = String(item?.movie_id ?? "");
-      const _id = String(item?._id ?? `trend_${movie_id}`);
-      const createdAt =
-        typeof item?.createdAt === "string"
-          ? new Date(item.createdAt).toLocaleDateString()
-          : item?.createdAt instanceof Date
-            ? item.createdAt.toLocaleDateString()
-            : new Date().toLocaleDateString();
+    return data
+      .filter(
+        (item) =>
+          typeof item?.poster_url === "string" &&
+          item.poster_url.trim().length > 0
+      )
+      .map((item) => {
+        const movie_id = String(item?.movie_id ?? "");
+        const _id = String(item?._id ?? `trend_${movie_id}`);
+        const createdAt =
+          typeof item?.createdAt === "string"
+            ? new Date(item.createdAt).toLocaleDateString()
+            : item?.createdAt instanceof Date
+              ? item.createdAt.toLocaleDateString()
+              : new Date().toLocaleDateString();
 
-      return {
-        _id,
-        $id: _id,
-        searchTerm: item?.searchTerm ?? "",
-        movie_id,
-        title: item?.title ?? "Untitled",
-        count: Number(item?.count ?? 0),
-        poster_url:
-          item?.poster_url ?? "https://placehold.co/600x400/1a1a1a/ffffff.png",
-        createdAt,
-      };
-    });
+        return {
+          _id,
+          $id: _id,
+          searchTerm: item?.searchTerm ?? "",
+          movie_id,
+          title: item?.title ?? "Untitled",
+          count: Number(item?.count ?? 0),
+          poster_url: item.poster_url,
+          createdAt,
+        };
+      });
   };
+
+  const fetchTrending = useCallback(
+    () => databaseService.getTrendingMovies(),
+    []
+  );
+  const fetchPopular = useCallback(
+    () =>
+      fetchMovies({
+        query: "",
+      }),
+    []
+  );
 
   const {
     data: trendingMoviesRaw,
     loading: trendingLoading,
     error: trendingError,
     refetch: refetchTrending,
-  } = useFetch(() => databaseService.getTrendingMovies());
+  } = useFetch(fetchTrending);
 
   // Transform the data
   const trendingMovies = transformTrendingData(trendingMoviesRaw || []);
@@ -65,11 +82,7 @@ export default function Index() {
     loading: moviesLoading,
     error: moviesError,
     refetch: refetchMovies,
-  } = useFetch(() =>
-    fetchMovies({
-      query: "",
-    })
-  );
+  } = useFetch(fetchPopular);
 
   const onRefresh = async () => {
     setRefreshing(true);

@@ -20,7 +20,11 @@ export const fetchMovies = async ({ query }: { query: string }) => {
     throw new Error(`Failed to fetch movies: ${response.statusText}`);
   }
   const data = await response.json();
-  return data.results;
+  // Hide movies that don't have a poster image
+  return (data.results ?? []).filter(
+    (movie: any) =>
+      typeof movie?.poster_path === "string" && movie.poster_path.trim().length
+  );
 };
 
 // const url =
@@ -57,7 +61,6 @@ export const fetchMovieDetails = async (
     const data = await response.json();
     return data;
   } catch (error) {
-    console.log("Error fetching movie details:", error);
     throw error;
   }
 };

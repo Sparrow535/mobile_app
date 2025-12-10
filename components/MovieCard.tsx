@@ -16,6 +16,8 @@ const MovieCard = ({
   const { user } = useAuth();
   const [isFav, setIsFav] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
+  const hasPoster =
+    typeof poster_path === "string" && poster_path.trim().length > 0;
 
   useEffect(() => {
     let mounted = true;
@@ -75,14 +77,17 @@ const MovieCard = ({
     }
   };
 
+  if (!hasPoster) {
+    // Skip rendering movies without a poster
+    return null;
+  }
+
   return (
     <Link href={`/movies/${id}`} asChild>
       <TouchableOpacity className="w-[30%] mb-4 relative">
         <Image
           source={{
-            uri: poster_path
-              ? `https://image.tmdb.org/t/p/w500${poster_path}`
-              : "https://placehold.co/600x400/1a1a1a/ffffff.png",
+            uri: `https://image.tmdb.org/t/p/w500${poster_path}`,
           }}
           className="w-full h-52 rounded-lg"
           resizeMode="cover"

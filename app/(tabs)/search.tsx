@@ -5,7 +5,7 @@ import { images } from "@/constants/images";
 import { fetchMovies } from "@/services/api";
 import { databaseService } from "@/services/database";
 import useFetch from "@/services/useFetch";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,17 +18,16 @@ import {
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const {
-    data: movies,
-    loading,
-    error,
-    refetch: loadMovies,
-    reset,
-  } = useFetch(
+  const fetchMoviesForQuery = useCallback(
     () =>
       fetchMovies({
         query: searchQuery,
       }),
+    [searchQuery]
+  );
+
+  const { data: movies, loading, error, refetch: loadMovies, reset } = useFetch(
+    fetchMoviesForQuery,
     false
   );
 

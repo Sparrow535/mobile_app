@@ -8,9 +8,14 @@ const TrendingCard = ({ movie, index }: TrendingCardProps) => {
   // Handle both MongoDB and Appwrite formats
   const movieId = movie.movie_id || movie._id?.toString() || "";
   const title = movie.title || "Unknown Title";
-  const posterUrl =
-    movie.poster_url || "https://placehold.co/600x400/1a1a1a/ffffff.png";
+  const hasPoster =
+    typeof movie.poster_url === "string" && movie.poster_url.trim().length > 0;
+  const posterUrl = hasPoster ? movie.poster_url : null;
   const searchCount = Number(movie.count || 0);
+
+  if (!hasPoster || !posterUrl) {
+    return null;
+  }
 
   return (
     <Link href={`/movies/${movieId}`} asChild>

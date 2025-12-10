@@ -34,7 +34,9 @@ jobs:
               run: npm run typecheck
 
             - name: Unit tests
-              run: npm test -- --ci --reporters=default --reporters=jest-junit
+              run: |
+                  mkdir -p reports/junit
+                  npm test -- --ci --reporters=default --reporters=jest-junit
               env:
                   JEST_JUNIT_OUTPUT_DIR: ./reports/junit
 

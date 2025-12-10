@@ -48,7 +48,11 @@ const Saved = () => {
     try {
       setLoading(true);
       const favs = await databaseService.getFavorites(user._id);
-      setFavorites(dedupeFavorites(favs || []));
+      const filtered = dedupeFavorites(favs || []).filter(
+        (f) =>
+          typeof f.poster_url === "string" && f.poster_url.trim().length > 0
+      );
+      setFavorites(filtered);
     } catch (error) {
       console.error("Error loading favorites:", error);
       Alert.alert("Error", "Failed to load favorites");
@@ -85,8 +89,8 @@ const Saved = () => {
     const created = item.createdAt
       ? new Date(item.createdAt).toLocaleDateString()
       : "—";
-    const poster =
-      item.poster_url || "https://placehold.co/600x400/1a1a1a/ffffff.png";
+    if (!item.poster_url) return null;
+    const poster = item.poster_url;
 
     return (
       <TouchableOpacity
